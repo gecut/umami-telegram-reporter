@@ -1,0 +1,49 @@
+[
+  {
+    "id": "choobino",
+    "name": "چوبینو",
+    "telegramChatId": -1001234567890,
+    "umamiWebsiteId": "b3e34b45-21dc-4a37-b769-cf4d97f5b801",
+    "timezone": "Asia/Tehran",
+    "schedule": {
+      "enabled": true,
+      "cron": "0 9 * * *",
+      "period": "yesterday"
+    },
+    "trackedEvents": [
+      {
+        "name": "add_to_cart",
+        "label": "افزودن به سبد"
+      },
+      {
+        "name": "purchase_complete",
+        "label": "خرید نهایی"
+      }
+    ],
+    "utmBreakdowns": [
+      {
+        "source": "Instagram",
+        "dimensions": ["utmContent"]
+      }
+    ]
+  },
+  {
+    "id": "sample-blog",
+    "name": "وبلاگ نمونه",
+    "telegramChatId": -1009876543210,
+    "umamiWebsiteId": "9f2a7e0e-2b0f-4b3f-9f0a-1234567890ab",
+    "timezone": "Asia/Tehran",
+    "schedule": {
+      "enabled": false,
+      "cron": "0 10 * * 1",
+      "period": "7d"
+    },
+    "trackedEvents": [
+      {
+        "name": "newsletter_signup",
+        "label": "عضویت خبرنامه"
+      }
+    ],
+    "utmBreakdowns": []
+  }
+]

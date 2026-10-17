@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  umami-reporter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: umami-telegram-reporter:latest
+    container_name: umami-telegram-reporter
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+      update_config:
+        order: stop-first
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - UMAMI_BASE_URL=${UMAMI_BASE_URL}
+      - UMAMI_API_KEY=${UMAMI_API_KEY}
+      - PROJECTS_CONFIG_PATH=/home/bun/app/projects.json
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - NODE_ENV=production
+    volumes:
+      - ./projects.json:/home/bun/app/projects.json:ro
+    security_opt:
+      - no-new-privileges:true
