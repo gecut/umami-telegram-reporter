@@ -44,6 +44,7 @@ async function main(): Promise<void> {
   const umamiClient = new UmamiClient({
     baseUrl: env.UMAMI_BASE_URL,
     apiKey: env.UMAMI_API_KEY,
+    timeoutMs: env.UMAMI_TIMEOUT_MS,
   });
 
   // 3. Initialize Telegram Bot

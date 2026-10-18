@@ -46,12 +46,13 @@ export function calculateDelta(
   if (previous === 0 && current > 0) {
     const indicator: Indicator = invertPolarity ? "negative" : "positive";
     const emoji = indicator === "positive" ? "🟢" : "🔴";
+    const displayVal = Number.isInteger(current) ? current.toString() : current.toFixed(fractionDigits);
     return {
       current,
       previous,
       diff,
       percent: null,
-      formatted: `\u200E+${current} (جدید)`,
+      formatted: `\u200E+${displayVal} (جدید)`,
       indicator,
       emoji,
       isNew: true,

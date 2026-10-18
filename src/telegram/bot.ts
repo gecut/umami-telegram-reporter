@@ -164,8 +164,11 @@ export function createReporterBot(options: BotContextOptions): Bot {
       return;
     }
 
-    // 4. Send typing indicator
+    // 4. Send typing indicator periodically while processing
     await ctx.replyWithChatAction("typing").catch(() => {});
+    const typingInterval = setInterval(() => {
+      ctx.replyWithChatAction("typing").catch(() => {});
+    }, 4000);
 
     // 5. Generate and render report
     try {
@@ -184,6 +187,8 @@ export function createReporterBot(options: BotContextOptions): Bot {
         ),
         { parse_mode: "HTML" }
       );
+    } finally {
+      clearInterval(typingInterval);
     }
   });
 

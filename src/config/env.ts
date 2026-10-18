@@ -10,6 +10,7 @@ export const EnvSchema = z.object({
     .url("UMAMI_BASE_URL must be a valid URL")
     .transform((url) => url.replace(/\/+$/, "")),
   UMAMI_API_KEY: z.string().min(1, "UMAMI_API_KEY is required"),
+  UMAMI_TIMEOUT_MS: z.coerce.number().int().min(5000).default(45_000),
   PROJECTS_CONFIG_PATH: z.string().default("./projects.json"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
@@ -26,6 +27,7 @@ export function getEnv(): Env {
     TELEGRAM_BOT_TOKEN: process.env["TELEGRAM_BOT_TOKEN"],
     UMAMI_BASE_URL: process.env["UMAMI_BASE_URL"],
     UMAMI_API_KEY: process.env["UMAMI_API_KEY"],
+    UMAMI_TIMEOUT_MS: process.env["UMAMI_TIMEOUT_MS"] ?? "45000",
     PROJECTS_CONFIG_PATH: process.env["PROJECTS_CONFIG_PATH"] ?? "./projects.json",
     LOG_LEVEL: process.env["LOG_LEVEL"] ?? "info",
     NODE_ENV: process.env["NODE_ENV"] ?? "production",

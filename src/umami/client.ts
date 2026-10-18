@@ -23,7 +23,7 @@ export class UmamiClient {
   constructor(options: UmamiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
     this.apiKey = options.apiKey;
-    this.timeoutMs = options.timeoutMs ?? 10_000;
+    this.timeoutMs = options.timeoutMs ?? 45_000;
     this.maxRetries = options.maxRetries ?? 3;
     this.fetchFn = options.fetchFn ?? fetch;
   }

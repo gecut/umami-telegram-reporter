@@ -78,9 +78,9 @@ export function renderPersianReport(model: ReportModel): string {
     for (const item of model.utmSources) {
       const sourceKey = item.name.toLowerCase();
       const breakdown = breakdownMap.get(sourceKey);
+      renderedBreakdownSources.add(sourceKey);
 
       if (breakdown && breakdown.contentBreakdown.length > 0) {
-        renderedBreakdownSources.add(sourceKey);
         lines.push(wrapRtlLine(`• <b><code>${escapeHtml(item.name)}</code></b>: ${formatNumber(item.count)}`));
         for (const sub of breakdown.contentBreakdown) {
           lines.push(wrapRtlLine(`    └ <code>${escapeHtml(sub.name)}</code>: ${formatNumber(sub.count)}`));
