@@ -10,6 +10,7 @@ describe("Telegram Command Argument Parsing", () => {
   it("parses English period arguments", () => {
     expect(parsePeriodArgument("today")).toBe("today");
     expect(parsePeriodArgument("yesterday")).toBe("yesterday");
+    expect(parsePeriodArgument("24h")).toBe("24h");
     expect(parsePeriodArgument("7d")).toBe("7d");
     expect(parsePeriodArgument("30d")).toBe("30d");
     expect(parsePeriodArgument("week")).toBe("7d");
@@ -19,6 +20,7 @@ describe("Telegram Command Argument Parsing", () => {
   it("parses Persian period arguments", () => {
     expect(parsePeriodArgument("امروز")).toBe("today");
     expect(parsePeriodArgument("دیروز")).toBe("yesterday");
+    expect(parsePeriodArgument("۲۴ساعت")).toBe("24h");
     expect(parsePeriodArgument("هفته")).toBe("7d");
     expect(parsePeriodArgument("ماه")).toBe("30d");
   });

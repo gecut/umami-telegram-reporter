@@ -31,7 +31,7 @@ export const ScheduleConfigSchema = z.object({
     .string()
     .default("0 9 * * *")
     .refine(isValidCronPattern, { message: "Invalid cron expression format" }),
-  period: z.enum(["yesterday", "today", "7d", "30d"]).default("yesterday"),
+  period: z.enum(["yesterday", "today", "24h", "7d", "30d"]).default("yesterday"),
 });
 
 export type ScheduleConfig = z.infer<typeof ScheduleConfigSchema>;

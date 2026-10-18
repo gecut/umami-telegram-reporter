@@ -1,4 +1,4 @@
-export type DateWindowType = "today" | "yesterday" | "7d" | "30d";
+export type DateWindowType = "today" | "yesterday" | "24h" | "7d" | "30d";
 
 export interface DateWindow {
   type: DateWindowType;
@@ -141,6 +141,21 @@ export function getDateWindow(
       const startAt = getZonedEpochMs(startStr, "00:00:00.000", timeZone);
       endAt = getZonedEpochMs(endStr, "23:59:59.999", timeZone);
       labelPersian = `دیروز (${formatPersianDate(startAt, timeZone)})`;
+      return {
+        type,
+        timezone: timeZone,
+        startAt,
+        endAt,
+        startDate: new Date(startAt),
+        endDate: new Date(endAt),
+        labelPersian,
+      };
+    }
+
+    case "24h": {
+      const endAt = now.getTime();
+      const startAt = endAt - 24 * 60 * 60 * 1000;
+      labelPersian = `۲۴ ساعت گذشته (${formatPersianDate(startAt, timeZone)} تا الان)`;
       return {
         type,
         timezone: timeZone,

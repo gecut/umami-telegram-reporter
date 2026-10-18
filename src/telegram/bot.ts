@@ -25,6 +25,9 @@ export function parsePeriodArgument(arg: string): DateWindowType | null {
   if (clean === "today" || clean === "امروز") {
     return "today";
   }
+  if (clean === "24h" || clean === "24" || clean === "۲۴" || clean === "۲۴ساعت" || clean === "24ساعت") {
+    return "24h";
+  }
   if (clean === "7d" || clean === "هفته" || clean === "week") {
     return "7d";
   }
@@ -79,6 +82,7 @@ export function createReporterBot(options: BotContextOptions): Bot {
           `🔹 <code>/report</code> — دریافت گزارش روز گذشته (پیش‌فرض)\n` +
           `🔹 <code>/report today</code> (یا <code>امروز</code>) — آمار لحظه‌ای از بامداد امروز تا الان\n` +
           `🔹 <code>/report yesterday</code> (یا <code>دیروز</code>) — آمار کامل روز گذشته\n` +
+          `🔹 <code>/report 24h</code> (یا <code>۲۴ساعت</code>) — آمار ۲۴ ساعت گذشته تا این لحظه\n` +
           `🔹 <code>/report 7d</code> (یا <code>هفته</code>) — گزارش تحلیلی ۷ روز گذشته\n` +
           `🔹 <code>/report 30d</code> (یا <code>ماه</code>) — گزارش تحلیلی ۳۰ روز گذشته\n` +
           `🔹 <code>/status</code> — وضعیت اتصال ربات به پروژه\n` +
@@ -156,8 +160,8 @@ export function createReporterBot(options: BotContextOptions): Bot {
       await ctx.reply(
         wrapRtlLine(
           `⚠️ بازه زمانی وارد شده نامعتبر است.\n` +
-            `دوره‌های مجاز: <code>today</code>, <code>yesterday</code>, <code>7d</code>, <code>30d</code>\n` +
-            `مثال: <code>/report 7d</code>`
+            `دوره‌های مجاز: <code>today</code>, <code>yesterday</code>, <code>24h</code>, <code>7d</code>, <code>30d</code>\n` +
+            `مثال: <code>/report 24h</code>`
         ),
         { parse_mode: "HTML" }
       );

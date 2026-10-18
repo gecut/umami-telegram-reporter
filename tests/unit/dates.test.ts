@@ -52,6 +52,13 @@ describe("Date Utilities & Timezone Calculations", () => {
     expect(win.endAt).toBe(fixedNow.getTime());
   });
 
+  it("computes accurate '24h' date window ending at current time", () => {
+    const win = getDateWindow("24h", "Asia/Tehran", fixedNow);
+    expect(win.endAt).toBe(fixedNow.getTime());
+    expect(win.startAt).toBe(fixedNow.getTime() - 24 * 60 * 60 * 1000);
+    expect(win.labelPersian).toContain("۲۴ ساعت گذشته");
+  });
+
   it("computes identical duration for comparison window", () => {
     const win = getDateWindow("yesterday", "Asia/Tehran", fixedNow);
     const comp = getComparisonWindow(win);
