@@ -2,10 +2,10 @@ version: "3.8"
 
 services:
   umami-reporter:
+    image: ghcr.io/gecut/umami-telegram-reporter:latest
     build:
       context: .
       dockerfile: Dockerfile
-    image: umami-telegram-reporter:latest
     container_name: umami-telegram-reporter
     restart: unless-stopped
     deploy:
