@@ -1,6 +1,6 @@
 import { Bot } from "grammy";
 import { getEnv } from "../config/env";
-import { loadProjects, type ProjectConfig } from "../config/projects";
+import { loadProjects, ProjectConfigSchema, type ProjectConfig } from "../config/projects";
 import { UmamiClient } from "../umami/client";
 import { generateReport } from "../report/coordinator";
 import { renderPersianReport } from "../report/renderer";
@@ -78,7 +78,7 @@ async function runDryRun(): Promise<void> {
 }
 
 async function runFixtureDryRun(): Promise<void> {
-  const sampleProject: ProjectConfig = {
+  const sampleProject: ProjectConfig = ProjectConfigSchema.parse({
     id: "sample-demo",
     name: "فروشگاه نمونه",
     telegramChatId: -100123456789,
@@ -96,7 +96,7 @@ async function runFixtureDryRun(): Promise<void> {
     utmBreakdowns: [
       { source: "Instagram", dimensions: ["utmContent"] },
     ],
-  };
+  });
 
   const mockClient = new UmamiClient({
     baseUrl: "https://mock.umami.internal",

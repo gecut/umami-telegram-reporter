@@ -2,12 +2,24 @@ import type { ReportModel, UtmBreakdownItem } from "./types";
 import { formatNumber, formatDuration, RLM, wrapRtlLine } from "../lib/format";
 import { escapeHtml } from "../lib/html";
 
+function getEventEmoji(nameOrLabel: string): string {
+  const lower = nameOrLabel.toLowerCase();
+  if (lower.includes("cart") || lower.includes("سبد")) return "🛒";
+  if (lower.includes("pay") || lower.includes("پرداخت") || lower.includes("خرید")) return "💳";
+  if (lower.includes("signup") || lower.includes("register") || lower.includes("ثبت‌نام") || lower.includes("عضویت")) return "✨";
+  if (lower.includes("lead") || lower.includes("contact") || lower.includes("تماس")) return "📞";
+  return "•";
+}
+
 export function renderPersianReport(model: ReportModel): string {
   const lines: string[] = [];
 
-  // Header
+  // 1. Header with Pulse Indicator
   lines.push(
-    wrapRtlLine(`📊 <b>${escapeHtml(model.projectName)}</b> — ${escapeHtml(model.periodLabel)}`)
+    wrapRtlLine(`📊 <b>نبض ${escapeHtml(model.projectName)}</b> — ${escapeHtml(model.periodLabel)}`)
+  );
+  lines.push(
+    wrapRtlLine(`${model.pulse.emoji} <b>وضعیت ترافیک</b>: ${escapeHtml(model.pulse.label)}`)
   );
   lines.push("");
 
@@ -22,45 +34,41 @@ export function renderPersianReport(model: ReportModel): string {
     return lines.join("\n");
   }
 
-  // Summary Metrics Section
-  lines.push(wrapRtlLine("📈 <b>شاخص‌های کلیدی (در مقایسه با دوره قبل)</b>:"));
+  // 2. Customers & Engagement Section (Executive business metrics)
+  lines.push(wrapRtlLine("👥 <b>مشتریان و بازدیدها</b>:"));
 
   const v = model.summary.visitors;
   lines.push(
     wrapRtlLine(
-      `👥 <b>کاربران یکتا</b>: ${formatNumber(v.value)}  ${v.delta.emoji} ${v.delta.formatted}`
-    )
-  );
-
-  const vi = model.summary.visits;
-  lines.push(
-    wrapRtlLine(
-      `🔄 <b>نشست‌ها</b>: ${formatNumber(vi.value)}  ${vi.delta.emoji} ${vi.delta.formatted}`
+      `• افراد بازدیدکننده: <b>${formatNumber(v.value)} نفر</b>  ${v.delta.emoji} ${v.delta.formatted}`
     )
   );
 
   const pv = model.summary.pageviews;
   lines.push(
     wrapRtlLine(
-      `📄 <b>نمایش صفحات</b>: ${formatNumber(pv.value)}  ${pv.delta.emoji} ${pv.delta.formatted}`
+      `• کل صفحات دیده‌شده: <b>${formatNumber(pv.value)} بار</b>  ${pv.delta.emoji} ${pv.delta.formatted}`
     )
   );
 
   const dur = model.summary.avgDurationSeconds;
   lines.push(
     wrapRtlLine(
-      `⏳ <b>میانگین زمان نشست</b>: ${formatDuration(dur.value)}  ${dur.delta.emoji} ${dur.delta.formatted}`
+      `• میانگین حضور در سایت: <b>${formatDuration(dur.value)}</b>`
     )
   );
 
-  const br = model.summary.bounceRate;
-  lines.push(
-    wrapRtlLine(
-      `📉 <b>نرخ پرش</b>: \u200E${br.value}%  ${br.delta.emoji} ${br.delta.formatted}`
-    )
-  );
+  // 3. Sales & Conversion Goals (Highlighted for business owner)
+  if (model.events.length > 0) {
+    lines.push("");
+    lines.push(wrapRtlLine("🎯 <b>بازدهی فروش و اهداف سایت</b>:"));
+    for (const ev of model.events) {
+      const emoji = getEventEmoji(`${ev.name} ${ev.label}`);
+      lines.push(wrapRtlLine(`${emoji} ${escapeHtml(ev.label)}: <b>${formatNumber(ev.count)} بار</b>`));
+    }
+  }
 
-  // UTM Campaigns & Breakdowns (e.g. Instagram Bio vs Story)
+  // 4. Acquisition Channels & UTM Breakdowns
   const breakdownMap = new Map<string, UtmBreakdownItem>();
   for (const b of model.utmBreakdowns) {
     breakdownMap.set(b.source.toLowerCase(), b);
@@ -72,64 +80,53 @@ export function renderPersianReport(model: ReportModel): string {
 
   if (hasUtmSources || hasBreakdowns) {
     lines.push("");
-    lines.push(wrapRtlLine("📢 <b>کمپین‌ها و منابع ورودی (کاربران یکتا)</b>:"));
+    lines.push(wrapRtlLine("📢 <b>مشتریان از کجا آمدند؟</b>"));
 
-    // Render top UTM sources, nesting breakdown details if available
     for (const item of model.utmSources) {
       const sourceKey = item.name.toLowerCase();
       const breakdown = breakdownMap.get(sourceKey);
       renderedBreakdownSources.add(sourceKey);
 
       if (breakdown && breakdown.contentBreakdown.length > 0) {
-        lines.push(wrapRtlLine(`• <b><code>${escapeHtml(item.name)}</code></b>: ${formatNumber(item.count)}`));
+        lines.push(wrapRtlLine(`• <b>${escapeHtml(item.name)}</b>: ${formatNumber(item.count)} نفر`));
         for (const sub of breakdown.contentBreakdown) {
-          lines.push(wrapRtlLine(`    └ <code>${escapeHtml(sub.name)}</code>: ${formatNumber(sub.count)}`));
+          lines.push(wrapRtlLine(`    └ ${escapeHtml(sub.name)}: ${formatNumber(sub.count)} نفر`));
         }
       } else {
-        lines.push(wrapRtlLine(`• <code>${escapeHtml(item.name)}</code>: ${formatNumber(item.count)}`));
+        lines.push(wrapRtlLine(`• ${escapeHtml(item.name)}: ${formatNumber(item.count)} نفر`));
       }
     }
 
-    // Render configured breakdowns that weren't in top UTM sources
     for (const b of model.utmBreakdowns) {
       const sourceKey = b.source.toLowerCase();
       if (!renderedBreakdownSources.has(sourceKey) && (b.totalVisitors > 0 || b.contentBreakdown.length > 0)) {
-        lines.push(wrapRtlLine(`• <b><code>${escapeHtml(b.source)}</code></b>: ${formatNumber(b.totalVisitors)}`));
+        lines.push(wrapRtlLine(`• <b>${escapeHtml(b.source)}</b>: ${formatNumber(b.totalVisitors)} نفر`));
         for (const sub of b.contentBreakdown) {
-          lines.push(wrapRtlLine(`    └ <code>${escapeHtml(sub.name)}</code>: ${formatNumber(sub.count)}`));
+          lines.push(wrapRtlLine(`    └ ${escapeHtml(sub.name)}: ${formatNumber(sub.count)} نفر`));
         }
       }
     }
   }
 
-  // Top Referrers
+  // 5. Referrers & Search Engines
   if (model.topReferrers.length > 0) {
     lines.push("");
-    lines.push(wrapRtlLine("🌐 <b>منابع اصلی ارجاع (کاربران یکتا)</b>:"));
+    lines.push(wrapRtlLine("🌐 <b>منابع ارجاع و جستجو</b>:"));
     for (const ref of model.topReferrers) {
-      lines.push(wrapRtlLine(`• <code>${escapeHtml(ref.name)}</code>: ${formatNumber(ref.count)}`));
+      lines.push(wrapRtlLine(`• ${escapeHtml(ref.name)}: ${formatNumber(ref.count)} نفر`));
     }
   }
 
-  // Top Pages
+  // 6. Most Viewed Sections / Pages
   if (model.topPages.length > 0) {
     lines.push("");
-    lines.push(wrapRtlLine("🔝 <b>صفحات پربازدید (کاربران یکتا)</b>:"));
+    lines.push(wrapRtlLine("🔝 <b>بیشترین بخش‌های دیده‌شده</b>:"));
     model.topPages.forEach((page, idx) => {
-      lines.push(wrapRtlLine(`${idx + 1}. <code>${escapeHtml(page.name)}</code> — ${formatNumber(page.count)}`));
+      lines.push(wrapRtlLine(`${idx + 1}. <b>${escapeHtml(page.name)}</b> (${formatNumber(page.count)} بازدید)`));
     });
   }
 
-  // Custom Events
-  if (model.events.length > 0) {
-    lines.push("");
-    lines.push(wrapRtlLine("🎯 <b>رویدادهای کلیدی (تعداد اجرا)</b>:"));
-    for (const ev of model.events) {
-      lines.push(wrapRtlLine(`• ${escapeHtml(ev.label)}: ${formatNumber(ev.count)}`));
-    }
-  }
-
-  // Warnings / Notes
+  // 7. Warnings / Operational Notes
   if (model.warnings.length > 0) {
     lines.push("");
     for (const warn of model.warnings) {

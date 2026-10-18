@@ -1,12 +1,12 @@
 import { describe, it, expect } from "bun:test";
-import type { ProjectConfig } from "../../src/config/projects";
+import { ProjectConfigSchema, type ProjectConfig } from "../../src/config/projects";
 import { UmamiClient } from "../../src/umami/client";
 import { generateReport } from "../../src/report/coordinator";
 import { renderPersianReport } from "../../src/report/renderer";
 import { calculateDelta } from "../../src/lib/percentage";
 
 describe("Report Coordinator & Persian Renderer", () => {
-  const sampleProject: ProjectConfig = {
+  const sampleProject: ProjectConfig = ProjectConfigSchema.parse({
     id: "test-proj",
     name: "فروشگاه تست",
     telegramChatId: -100123456,
@@ -20,7 +20,7 @@ describe("Report Coordinator & Persian Renderer", () => {
     utmBreakdowns: [
       { source: "Instagram", dimensions: ["utmContent"] },
     ],
-  };
+  });
 
   it("coordinates and renders a complete Persian report from mock responses", async () => {
     const mockClient = new UmamiClient({
@@ -95,13 +95,13 @@ describe("Report Coordinator & Persian Renderer", () => {
     expect(model.events[0]?.label).toBe("ثبت‌نام کاربر");
 
     const html = renderPersianReport(model);
-    expect(html).toContain("فروشگاه تست");
-    expect(html).toContain("کاربران یکتا");
-    expect(html).toContain("ثبت‌نام کاربر: 25");
-    expect(html).toContain("خرید نهایی: 10");
-    expect(html).toContain("Instagram");
-    expect(html).toContain("<code>Story</code>: 90");
-    expect(html).toContain("<code>Bio</code>: 60");
+    expect(html).toContain("نبض فروشگاه تست");
+    expect(html).toContain("افراد بازدیدکننده: <b>400 نفر</b>");
+    expect(html).toContain("ثبت‌نام کاربر: <b>25 بار</b>");
+    expect(html).toContain("خرید نهایی: <b>10 بار</b>");
+    expect(html).toContain("اینستاگرام");
+    expect(html).toContain("استوری‌ها: 90 نفر");
+    expect(html).toContain("لینک بیو: 60 نفر");
   });
 
   it("handles zero traffic gracefully with polite Persian notice", async () => {
@@ -207,6 +207,11 @@ describe("Report Coordinator & Persian Renderer", () => {
       period: "yesterday" as const,
       periodLabel: "دیروز",
       generatedAt: new Date(),
+      pulse: {
+        status: "surging" as const,
+        label: "افزایشی و فعال",
+        emoji: "🟢",
+      },
       summary: {
         visitors: { value: 100, previous: 90, delta: calculateDelta(100, 90) },
         visits: { value: 120, previous: 100, delta: calculateDelta(120, 100) },

@@ -1,12 +1,12 @@
 import { describe, it, expect } from "bun:test";
 import { SchedulerEngine } from "../../src/scheduler/engine";
-import { ProjectRegistry, type ProjectConfig } from "../../src/config/projects";
+import { ProjectRegistry, ProjectConfigSchema, type ProjectConfig } from "../../src/config/projects";
 import { UmamiClient } from "../../src/umami/client";
 import type { Bot } from "grammy";
 
 describe("SchedulerEngine", () => {
   const sampleProjects: ProjectConfig[] = [
-    {
+    ProjectConfigSchema.parse({
       id: "scheduled-proj-1",
       name: "پروژه زمان‌بندی‌شده یک",
       telegramChatId: -100111111,
@@ -15,8 +15,8 @@ describe("SchedulerEngine", () => {
       schedule: { enabled: true, cron: "0 9 * * *", period: "yesterday" },
       trackedEvents: [],
       utmBreakdowns: [],
-    },
-    {
+    }),
+    ProjectConfigSchema.parse({
       id: "scheduled-proj-2",
       name: "پروژه زمان‌بندی‌شده دو",
       telegramChatId: -100222222,
@@ -25,8 +25,8 @@ describe("SchedulerEngine", () => {
       schedule: { enabled: true, cron: "0 10 * * *", period: "today" },
       trackedEvents: [],
       utmBreakdowns: [],
-    },
-    {
+    }),
+    ProjectConfigSchema.parse({
       id: "manual-only-proj",
       name: "پروژه دستی",
       telegramChatId: -100333333,
@@ -35,7 +35,7 @@ describe("SchedulerEngine", () => {
       schedule: { enabled: false, cron: "0 9 * * *", period: "yesterday" },
       trackedEvents: [],
       utmBreakdowns: [],
-    },
+    }),
   ];
 
   it("registers cron jobs only for enabled scheduled projects", async () => {
@@ -126,7 +126,7 @@ describe("SchedulerEngine", () => {
     expect(sentMessages.length).toBe(1);
     expect(sentMessages[0]?.chatId).toBe(-100111111);
     expect(sentMessages[0]?.text).toContain("پروژه زمان‌بندی‌شده یک");
-    expect(sentMessages[0]?.text).toContain("کاربران یکتا");
+    expect(sentMessages[0]?.text).toContain("افراد بازدیدکننده");
 
     await scheduler.stop();
   });

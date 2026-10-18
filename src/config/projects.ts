@@ -61,6 +61,9 @@ export const ProjectConfigSchema = z.object({
   }),
   trackedEvents: z.array(TrackedEventSchema).default([]),
   utmBreakdowns: z.array(UtmBreakdownSchema).default([]),
+  pathLabels: z.record(z.string()).default({}),
+  referrerLabels: z.record(z.string()).default({}),
+  filterPaymentGateways: z.boolean().default(true),
 });
 
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;

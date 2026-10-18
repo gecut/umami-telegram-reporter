@@ -4,12 +4,20 @@ import type { UmamiStatsResponse, UmamiMetricItem } from "../umami/types";
 import { getDateWindow, type DateWindowType } from "../lib/dates";
 import { calculateDelta } from "../lib/percentage";
 import { logger } from "../lib/logger";
+import {
+  humanizePath,
+  humanizeReferrer,
+  humanizeUtmSource,
+  humanizeUtmContent,
+  isPaymentGateway,
+} from "../lib/humanizer";
 import type {
   ReportModel,
   MetricSummaryItem,
   RankedMetricItem,
   UtmBreakdownItem,
   CustomEventReportItem,
+  TrafficPulse,
 } from "./types";
 
 interface ParsedStatValue {
@@ -170,37 +178,70 @@ export async function generateReport(
     } satisfies MetricSummaryItem,
   };
 
-  // 4. Normalize Top Pages
+  // 4. Calculate Business Traffic Pulse
+  let pulse: TrafficPulse;
+  const deltaPercent = summary.visitors.delta.percent;
+
+  if (visitorsData.value === 0) {
+    pulse = { status: "stable", label: "بدون ترافیک در این بازه", emoji: "⚪️" };
+  } else if (visitorsData.prev === 0) {
+    pulse = { status: "new", label: "ورود مخاطبان جدید به سایت", emoji: "🟢" };
+  } else if (deltaPercent !== null && deltaPercent > 10) {
+    pulse = { status: "surging", label: "افزایشی و فعال", emoji: "🟢" };
+  } else if (deltaPercent !== null && deltaPercent < -10) {
+    pulse = { status: "declining", label: "کاهشی نسبت به دوره قبل", emoji: "🟡" };
+  } else {
+    pulse = { status: "stable", label: "پایدار و عادی", emoji: "⚪️" };
+  }
+
+  // 5. Normalize Top Pages (Humanized and aggregated)
   const safePages = Array.isArray(rawPages) ? rawPages : [];
-  const topPages: RankedMetricItem[] = safePages
-    .filter((item) => item && item.x !== null && item.x !== "")
-    .slice(0, 5)
-    .map((item) => ({
-      name: item.x ?? "/",
-      count: item.y ?? 0,
-    }));
+  const pageAggregation = new Map<string, number>();
+  for (const item of safePages) {
+    if (!item || item.x === null || item.x === "") continue;
+    const humanName = humanizePath(item.x, project.pathLabels);
+    pageAggregation.set(humanName, (pageAggregation.get(humanName) ?? 0) + (item.y ?? 0));
+  }
 
-  // 5. Normalize Referrers
+  const topPages: RankedMetricItem[] = Array.from(pageAggregation.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  // 6. Normalize Referrers (Humanized, aggregated, and filtered for payment gateways)
   const safeReferrers = Array.isArray(rawReferrers) ? rawReferrers : [];
-  const topReferrers: RankedMetricItem[] = safeReferrers
-    .filter((item) => item && item.x !== null && item.x !== "")
-    .slice(0, 5)
-    .map((item) => ({
-      name: item.x ?? "(مستقیم / نامشخص)",
-      count: item.y ?? 0,
-    }));
+  const shouldFilterGateways = project.filterPaymentGateways !== false;
+  const filteredReferrers = shouldFilterGateways
+    ? safeReferrers.filter((item) => !isPaymentGateway(item?.x))
+    : safeReferrers;
 
-  // 6. Normalize UTM Sources
+  const referrerAggregation = new Map<string, number>();
+  for (const item of filteredReferrers) {
+    if (!item || item.x === null || item.x === "") continue;
+    const humanName = humanizeReferrer(item.x, project.referrerLabels);
+    referrerAggregation.set(humanName, (referrerAggregation.get(humanName) ?? 0) + (item.y ?? 0));
+  }
+
+  const topReferrers: RankedMetricItem[] = Array.from(referrerAggregation.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  // 7. Normalize UTM Sources (Humanized and aggregated)
   const safeUtmSources = Array.isArray(rawUtmSources) ? rawUtmSources : [];
-  const utmSources: RankedMetricItem[] = safeUtmSources
-    .filter((item) => item && item.x !== null && item.x !== "")
-    .slice(0, 5)
-    .map((item) => ({
-      name: item.x ?? "(بدون منبع)",
-      count: item.y ?? 0,
-    }));
+  const utmAggregation = new Map<string, number>();
+  for (const item of safeUtmSources) {
+    if (!item || item.x === null || item.x === "") continue;
+    const humanName = humanizeUtmSource(item.x, project.referrerLabels);
+    utmAggregation.set(humanName, (utmAggregation.get(humanName) ?? 0) + (item.y ?? 0));
+  }
 
-  // 7. Normalize UTM Breakdowns (e.g. Instagram Story vs Bio)
+  const utmSources: RankedMetricItem[] = Array.from(utmAggregation.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  // 8. Normalize UTM Breakdowns (Humanized)
   const utmBreakdowns: UtmBreakdownItem[] = (rawBreakdowns ?? []).map((b) => {
     const safeItems = Array.isArray(b.items) ? b.items : [];
     const matchedSource = safeUtmSources.find(
@@ -211,18 +252,18 @@ export async function generateReport(
       .filter((item) => item && item.x !== null && item.x !== "")
       .slice(0, 5)
       .map((item) => ({
-        name: item.x ?? "(نامشخص)",
+        name: humanizeUtmContent(item.x),
         count: item.y ?? 0,
       }));
 
     return {
-      source: b.source,
+      source: humanizeUtmSource(b.source),
       totalVisitors: total,
       contentBreakdown,
     };
   });
 
-  // 8. Normalize Custom Events
+  // 9. Normalize Custom Events
   const safeEvents = Array.isArray(rawEvents) ? rawEvents : [];
   const rawEventMap = new Map<string, number>();
   for (const ev of safeEvents) {
@@ -265,6 +306,7 @@ export async function generateReport(
     period,
     periodLabel: window.labelPersian,
     generatedAt: now,
+    pulse,
     summary,
     topPages,
     topReferrers,

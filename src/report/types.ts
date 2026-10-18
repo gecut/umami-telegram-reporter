@@ -26,6 +26,12 @@ export interface CustomEventReportItem {
   delta?: DeltaResult;
 }
 
+export interface TrafficPulse {
+  status: "surging" | "stable" | "declining" | "new";
+  label: string;
+  emoji: string;
+}
+
 export interface ReportModel {
   projectId: string;
   projectName: string;
@@ -34,6 +40,7 @@ export interface ReportModel {
   period: DateWindowType;
   periodLabel: string;
   generatedAt: Date;
+  pulse: TrafficPulse;
   summary: {
     visitors: MetricSummaryItem;
     visits: MetricSummaryItem;

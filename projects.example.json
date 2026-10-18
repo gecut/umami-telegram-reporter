@@ -25,7 +25,17 @@
         "source": "Instagram",
         "dimensions": ["utmContent"]
       }
-    ]
+    ],
+    "filterPaymentGateways": true,
+    "pathLabels": {
+      "/": "صفحه اصلی (خانه)",
+      "/shop": "ویترین فروشگاه",
+      "/cart": "سبد خرید",
+      "/checkout": "تسویه حساب"
+    },
+    "referrerLabels": {
+      "partner.example.com": "سایت همکار"
+    }
   },
   {
     "id": "sample-blog",
