@@ -1,5 +1,6 @@
 import type { DateWindowType } from "../lib/dates";
 import type { DeltaResult } from "../lib/percentage";
+import type { ReportSections } from "../config/projects";
 
 export interface MetricSummaryItem {
   value: number;
@@ -54,4 +55,5 @@ export interface ReportModel {
   utmBreakdowns: UtmBreakdownItem[];
   events: CustomEventReportItem[];
   warnings: string[];
+  sections?: ReportSections;
 }

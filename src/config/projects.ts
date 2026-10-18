@@ -45,6 +45,18 @@ function isValidIanaTimezone(tz: string): boolean {
   }
 }
 
+export const ReportSectionsSchema = z.object({
+  trafficPulse: z.boolean().default(true),
+  summary: z.boolean().default(true),
+  events: z.boolean().default(true),
+  utmBreakdowns: z.boolean().default(true),
+  referrers: z.boolean().default(true),
+  topPages: z.boolean().default(true),
+  compactSources: z.boolean().default(true),
+});
+
+export type ReportSections = z.infer<typeof ReportSectionsSchema>;
+
 export const ProjectConfigSchema = z.object({
   id: z.string().min(1, "Project id is required").regex(/^[a-z0-9_-]+$/, "Project id must be alphanumeric with dashes/underscores"),
   name: z.string().min(1, "Project display name is required"),
@@ -64,6 +76,7 @@ export const ProjectConfigSchema = z.object({
   pathLabels: z.record(z.string()).default({}),
   referrerLabels: z.record(z.string()).default({}),
   filterPaymentGateways: z.boolean().default(true),
+  sections: ReportSectionsSchema.default({}),
 });
 
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;

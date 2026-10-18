@@ -35,6 +35,10 @@
     },
     "referrerLabels": {
       "partner.example.com": "سایت همکار"
+    },
+    "sections": {
+      "topPages": false,
+      "compactSources": true
     }
   },
   {

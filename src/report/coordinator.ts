@@ -74,21 +74,27 @@ export async function generateReport(
   }
 
   // 2. Fetch Secondary Metrics Concurrently with Graceful Degradation
-  const fetchPagesPromise = client
-    .getMetrics(project.umamiWebsiteId, window.startAt, window.endAt, "path", 5)
-    .catch((err) => {
-      warnings.push("امکان دریافت فهرست صفحات پربازدید وجود نداشت.");
-      logger.warn(`[ReportCoordinator] Top pages query failed for ${project.id}`, { error: String(err) });
-      return [] as UmamiMetricItem[];
-    });
+  const fetchPagesPromise =
+    project.sections?.topPages !== false
+      ? client
+          .getMetrics(project.umamiWebsiteId, window.startAt, window.endAt, "path", 5)
+          .catch((err) => {
+            warnings.push("امکان دریافت فهرست صفحات پربازدید وجود نداشت.");
+            logger.warn(`[ReportCoordinator] Top pages query failed for ${project.id}`, { error: String(err) });
+            return [] as UmamiMetricItem[];
+          })
+      : Promise.resolve([] as UmamiMetricItem[]);
 
-  const fetchReferrersPromise = client
-    .getMetrics(project.umamiWebsiteId, window.startAt, window.endAt, "referrer", 5)
-    .catch((err) => {
-      warnings.push("امکان دریافت منابع ارجاع وجود نداشت.");
-      logger.warn(`[ReportCoordinator] Referrers query failed for ${project.id}`, { error: String(err) });
-      return [] as UmamiMetricItem[];
-    });
+  const fetchReferrersPromise =
+    project.sections?.referrers !== false
+      ? client
+          .getMetrics(project.umamiWebsiteId, window.startAt, window.endAt, "referrer", 5)
+          .catch((err) => {
+            warnings.push("امکان دریافت منابع ارجاع وجود نداشت.");
+            logger.warn(`[ReportCoordinator] Referrers query failed for ${project.id}`, { error: String(err) });
+            return [] as UmamiMetricItem[];
+          })
+      : Promise.resolve([] as UmamiMetricItem[]);
 
   const fetchUtmSourcesPromise = client
     .getMetrics(project.umamiWebsiteId, window.startAt, window.endAt, "utmSource", 5)
@@ -314,5 +320,6 @@ export async function generateReport(
     utmBreakdowns,
     events,
     warnings,
+    sections: project.sections,
   };
 }

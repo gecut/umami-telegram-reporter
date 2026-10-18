@@ -13,14 +13,18 @@ function getEventEmoji(nameOrLabel: string): string {
 
 export function renderPersianReport(model: ReportModel): string {
   const lines: string[] = [];
+  const sec = model.sections;
+  const isCompact = sec?.compactSources !== false;
 
   // 1. Header with Pulse Indicator
   lines.push(
     wrapRtlLine(`📊 <b>نبض ${escapeHtml(model.projectName)}</b> — ${escapeHtml(model.periodLabel)}`)
   );
-  lines.push(
-    wrapRtlLine(`${model.pulse.emoji} <b>وضعیت ترافیک</b>: ${escapeHtml(model.pulse.label)}`)
-  );
+  if (sec?.trafficPulse !== false) {
+    lines.push(
+      wrapRtlLine(`${model.pulse.emoji} <b>وضعیت ترافیک</b>: ${escapeHtml(model.pulse.label)}`)
+    );
+  }
   lines.push("");
 
   // Check if period has zero traffic
@@ -35,31 +39,33 @@ export function renderPersianReport(model: ReportModel): string {
   }
 
   // 2. Customers & Engagement Section (Executive business metrics)
-  lines.push(wrapRtlLine("👥 <b>مشتریان و بازدیدها</b>:"));
+  if (sec?.summary !== false) {
+    lines.push(wrapRtlLine("👥 <b>مشتریان و بازدیدها</b>:"));
 
-  const v = model.summary.visitors;
-  lines.push(
-    wrapRtlLine(
-      `• افراد بازدیدکننده: <b>${formatNumber(v.value)} نفر</b>  ${v.delta.emoji} ${v.delta.formatted}`
-    )
-  );
+    const v = model.summary.visitors;
+    lines.push(
+      wrapRtlLine(
+        `• افراد بازدیدکننده: <b>${formatNumber(v.value)} نفر</b>  ${v.delta.emoji} ${v.delta.formatted}`
+      )
+    );
 
-  const pv = model.summary.pageviews;
-  lines.push(
-    wrapRtlLine(
-      `• کل صفحات دیده‌شده: <b>${formatNumber(pv.value)} بار</b>  ${pv.delta.emoji} ${pv.delta.formatted}`
-    )
-  );
+    const pv = model.summary.pageviews;
+    lines.push(
+      wrapRtlLine(
+        `• کل صفحات دیده‌شده: <b>${formatNumber(pv.value)} بار</b>  ${pv.delta.emoji} ${pv.delta.formatted}`
+      )
+    );
 
-  const dur = model.summary.avgDurationSeconds;
-  lines.push(
-    wrapRtlLine(
-      `• میانگین حضور در سایت: <b>${formatDuration(dur.value)}</b>`
-    )
-  );
+    const dur = model.summary.avgDurationSeconds;
+    lines.push(
+      wrapRtlLine(
+        `• میانگین حضور در سایت: <b>${formatDuration(dur.value)}</b>`
+      )
+    );
+  }
 
   // 3. Sales & Conversion Goals (Highlighted for business owner)
-  if (model.events.length > 0) {
+  if (sec?.events !== false && model.events.length > 0) {
     lines.push("");
     lines.push(wrapRtlLine("🎯 <b>بازدهی فروش و اهداف سایت</b>:"));
     for (const ev of model.events) {
@@ -69,47 +75,63 @@ export function renderPersianReport(model: ReportModel): string {
   }
 
   // 4. Acquisition Channels & UTM Breakdowns
-  const breakdownMap = new Map<string, UtmBreakdownItem>();
-  for (const b of model.utmBreakdowns) {
-    breakdownMap.set(b.source.toLowerCase(), b);
-  }
-
-  const renderedBreakdownSources = new Set<string>();
-  const hasUtmSources = model.utmSources.length > 0;
-  const hasBreakdowns = model.utmBreakdowns.some((b) => b.contentBreakdown.length > 0 || b.totalVisitors > 0);
-
-  if (hasUtmSources || hasBreakdowns) {
-    lines.push("");
-    lines.push(wrapRtlLine("📢 <b>مشتریان از کجا آمدند؟</b>"));
-
-    for (const item of model.utmSources) {
-      const sourceKey = item.name.toLowerCase();
-      const breakdown = breakdownMap.get(sourceKey);
-      renderedBreakdownSources.add(sourceKey);
-
-      if (breakdown && breakdown.contentBreakdown.length > 0) {
-        lines.push(wrapRtlLine(`• <b>${escapeHtml(item.name)}</b>: ${formatNumber(item.count)} نفر`));
-        for (const sub of breakdown.contentBreakdown) {
-          lines.push(wrapRtlLine(`    └ ${escapeHtml(sub.name)}: ${formatNumber(sub.count)} نفر`));
-        }
-      } else {
-        lines.push(wrapRtlLine(`• ${escapeHtml(item.name)}: ${formatNumber(item.count)} نفر`));
-      }
+  if (sec?.utmBreakdowns !== false) {
+    const breakdownMap = new Map<string, UtmBreakdownItem>();
+    for (const b of model.utmBreakdowns) {
+      breakdownMap.set(b.source.toLowerCase(), b);
     }
 
-    for (const b of model.utmBreakdowns) {
-      const sourceKey = b.source.toLowerCase();
-      if (!renderedBreakdownSources.has(sourceKey) && (b.totalVisitors > 0 || b.contentBreakdown.length > 0)) {
-        lines.push(wrapRtlLine(`• <b>${escapeHtml(b.source)}</b>: ${formatNumber(b.totalVisitors)} نفر`));
-        for (const sub of b.contentBreakdown) {
-          lines.push(wrapRtlLine(`    └ ${escapeHtml(sub.name)}: ${formatNumber(sub.count)} نفر`));
+    const renderedBreakdownSources = new Set<string>();
+    const hasUtmSources = model.utmSources.length > 0;
+    const hasBreakdowns = model.utmBreakdowns.some((b) => b.contentBreakdown.length > 0 || b.totalVisitors > 0);
+
+    if (hasUtmSources || hasBreakdowns) {
+      lines.push("");
+      lines.push(wrapRtlLine("📢 <b>مشتریان از کجا آمدند؟</b>"));
+
+      for (const item of model.utmSources) {
+        const sourceKey = item.name.toLowerCase();
+        const breakdown = breakdownMap.get(sourceKey);
+        renderedBreakdownSources.add(sourceKey);
+
+        if (breakdown && breakdown.contentBreakdown.length > 0) {
+          if (isCompact) {
+            const subDetails = breakdown.contentBreakdown
+              .map((sub) => `${escapeHtml(sub.name)}: ${formatNumber(sub.count)} نفر`)
+              .join(" ، ");
+            lines.push(wrapRtlLine(`• <b>${escapeHtml(item.name)}</b>: ${formatNumber(item.count)} نفر (${subDetails})`));
+          } else {
+            lines.push(wrapRtlLine(`• <b>${escapeHtml(item.name)}</b>: ${formatNumber(item.count)} نفر`));
+            for (const sub of breakdown.contentBreakdown) {
+              lines.push(wrapRtlLine(`    └ ${escapeHtml(sub.name)}: ${formatNumber(sub.count)} نفر`));
+            }
+          }
+        } else {
+          lines.push(wrapRtlLine(`• ${escapeHtml(item.name)}: ${formatNumber(item.count)} نفر`));
+        }
+      }
+
+      for (const b of model.utmBreakdowns) {
+        const sourceKey = b.source.toLowerCase();
+        if (!renderedBreakdownSources.has(sourceKey) && (b.totalVisitors > 0 || b.contentBreakdown.length > 0)) {
+          if (isCompact && b.contentBreakdown.length > 0) {
+            const subDetails = b.contentBreakdown
+              .map((sub) => `${escapeHtml(sub.name)}: ${formatNumber(sub.count)} نفر`)
+              .join(" ، ");
+            lines.push(wrapRtlLine(`• <b>${escapeHtml(b.source)}</b>: ${formatNumber(b.totalVisitors)} نفر (${subDetails})`));
+          } else {
+            lines.push(wrapRtlLine(`• <b>${escapeHtml(b.source)}</b>: ${formatNumber(b.totalVisitors)} نفر`));
+            for (const sub of b.contentBreakdown) {
+              lines.push(wrapRtlLine(`    └ ${escapeHtml(sub.name)}: ${formatNumber(sub.count)} نفر`));
+            }
+          }
         }
       }
     }
   }
 
   // 5. Referrers & Search Engines
-  if (model.topReferrers.length > 0) {
+  if (sec?.referrers !== false && model.topReferrers.length > 0) {
     lines.push("");
     lines.push(wrapRtlLine("🌐 <b>منابع ارجاع و جستجو</b>:"));
     for (const ref of model.topReferrers) {
@@ -118,7 +140,7 @@ export function renderPersianReport(model: ReportModel): string {
   }
 
   // 6. Most Viewed Sections / Pages
-  if (model.topPages.length > 0) {
+  if (sec?.topPages !== false && model.topPages.length > 0) {
     lines.push("");
     lines.push(wrapRtlLine("🔝 <b>بیشترین بخش‌های دیده‌شده</b>:"));
     model.topPages.forEach((page, idx) => {
